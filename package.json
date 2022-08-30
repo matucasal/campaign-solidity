@@ -9,7 +9,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@truffle/hdwallet-provider": "^1.5.1",
+    "@truffle/hdwallet-provider": "^1.7.0",
     "dotenv": "^16.0.1",
     "fs-extra": "^10.1.0",
     "ganache-cli": "^6.12.2",
