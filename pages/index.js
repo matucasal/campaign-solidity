@@ -1,5 +1,5 @@
 import React from 'react';
 
 export default() => {
-	return <h1> This is new campaing</h1>
+	return <h1> This is the index</h1>
 }
