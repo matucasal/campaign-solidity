@@ -5,13 +5,16 @@ module.exports = {
     'es2021': true,
     'mocha': true,
     'node': true,
+    'jsx': true,
   },
   'extends': 'eslint:recommended',
   'overrides': [
   ],
   'parserOptions': {
-    'ecmaVersion': 'latest'
+    'sourceType': 'module',
+    'ecmaVersion': 'latest',
   },
+  
   'rules': {
     'no-console': 'warn',
     //* Avoid Bugs
@@ -57,4 +60,4 @@ module.exports = {
     'prefer-const': 'error',
     'prefer-template': 'warn'
   }
-}
+};
