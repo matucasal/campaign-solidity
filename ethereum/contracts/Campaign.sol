@@ -1,85 +1,95 @@
-// SPDX-License-Identifier: GPL-3.0
-pragma solidity ^0.8.2;
- 
+// SPDX-License-Identifier: MIT
+
+pragma solidity ^0.8.9;
+
 contract CampaignFactory {
-    Campaign[] public deployedCampaigns;
-    
+    address payable[] public deployedCampaigns;
+
     function createCampaign(uint minimum) public {
-        Campaign newCampaign = new Campaign(minimum, msg.sender);
-        deployedCampaigns.push(newCampaign);
+        address newCampaign = address(new Campaign(minimum, msg.sender));
+        deployedCampaigns.push(payable(newCampaign));
     }
-    
-    function getDeployedCampaigns() public view returns (Campaign[] memory) {
+
+    function getDeployedCampaigns() public view returns (address payable[] memory) {
         return deployedCampaigns;
     }
 }
- 
+
 contract Campaign {
     struct Request {
         string description;
         uint value;
-        address payable recipient;
+        address recipient;
         bool complete;
-        mapping (address => bool) approvals;
         uint approvalCount;
+        mapping(address => bool) approvals;
     }
-    
+
+    Request[] public requests;
     address public manager;
     uint public minimumContribution;
     mapping(address => bool) public approvers;
     uint public approversCount;
-    
-    uint numRequests;
-    mapping (uint => Request) requests;
-    
-    
-    modifier restrictedToManager() {
+
+    modifier restricted() {
         require(msg.sender == manager);
         _;
     }
-    
-    constructor(uint minimum, address creator) {
+
+    constructor (uint minimum, address creator) {
         manager = creator;
         minimumContribution = minimum;
     }
-    
+
     function contribute() public payable {
         require(msg.value > minimumContribution);
+
         approvers[msg.sender] = true;
-        approversCount ++;
+        approversCount++;
     }
-    
-    function createRequest(string calldata description, uint value, address payable recipient) public restrictedToManager {
-        // get last index of requests from storage
-       Request storage newRequest = requests[numRequests];
-       // increase requests counter
-       numRequests ++;
-       // add information about new request
-       newRequest.description = description;
-       newRequest.value = value;
-       newRequest.recipient = recipient;
-       newRequest.approvalCount = 0;
+
+    function createRequest(string memory description, uint value, address recipient) public restricted {
+        Request storage newRequest = requests.push(); 
+        newRequest.description = description;
+        newRequest.value= value;
+        newRequest.recipient= recipient;
+        newRequest.complete= false;
+        newRequest.approvalCount= 0;
     }
-    
+
     function approveRequest(uint index) public {
-        // get request at provided index from storage
         Request storage request = requests[index];
-        // sender needs to have contributed to Campaign
+
         require(approvers[msg.sender]);
-        // sender must not have voted yet
         require(!request.approvals[msg.sender]);
-        
-        // add sender to addresses who have voted
+
         request.approvals[msg.sender] = true;
-        // increment approval count
-        request.approvalCount ++;
+        request.approvalCount++;
+    }
+
+    function finalizeRequest(uint index) public restricted {
+        Request storage request = requests[index];
+
+        require(request.approvalCount > (approversCount / 2));
+        require(!request.complete);
+
+        payable(request.recipient).transfer(request.value);
+        request.complete = true;
     }
     
-    function finalizeRequest(uint index) public restrictedToManager {
-        Request storage request = requests[index];
-        require(!request.complete);
-        require(request.approvalCount > (approversCount / 2));
-        request.recipient.transfer(request.value);
-        request.complete = true;
+    function getSummary() public view returns (
+      uint, uint, uint, uint, address
+      ) {
+        return (
+          minimumContribution,
+          address(this).balance,
+          requests.length,
+          approversCount,
+          manager
+        );
+    }
+    
+    function getRequestsCount() public view returns (uint) {
+        return requests.length;
     }
 }
