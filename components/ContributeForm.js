@@ -6,11 +6,14 @@ import Router from 'next/router'
 
 const ContributeForm = (props) => {
 	const [value, setValue] = useState(0);
+	const [errorMessage, setErrorMessage] = useState('');
+	const [loading, setLoading] = useState(false);
 
 	const onSubmit = async (event) => {
 		event.preventDefault();
 		const campaign = Campaigns (props.address)
-
+		setErrorMessage('');
+		setLoading(true);
 		try{
 			const accounts = await web3.eth.getAccounts ();
 			await campaign.methods.contribute().send({
@@ -21,12 +24,14 @@ const ContributeForm = (props) => {
 			Router.reload(window.location.pathname)
 		}
 		catch(e){
-
+			setErrorMessage(e.message);
 		}
 
+		setValue('');
+		setLoading(false);
 	}
 	return(
-		<Form onSubmit={onSubmit}>
+		<Form onSubmit={onSubmit} error={!!errorMessage}>
 			<Form.Field>
 				<label>Amount to Contribute</label>
 				<Input
@@ -35,10 +40,11 @@ const ContributeForm = (props) => {
 					label="ether"
 					labelPosition="right"
 				/>
-				<Button primary>
+			</Form.Field>
+			<Message error header="Oops!" content={errorMessage} />
+			<Button primary loading={loading}>
 					Contribute
 				</Button>
-			</Form.Field>
 		</Form>
 	);
 };
